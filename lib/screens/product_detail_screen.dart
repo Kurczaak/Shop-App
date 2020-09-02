@@ -17,6 +17,31 @@ class ProductDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(product.title),
       ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              height: 300,
+              width: double.infinity,
+              child: Image.network(
+                product.imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Text(
+              product.price.toString() + 'zł',
+              style: TextStyle(color: Colors.grey, fontSize: 20),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Text(product.description),
+          ],
+        ),
+      ),
     );
   }
 }
