@@ -20,6 +20,29 @@ class CartItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dismissible(
+      confirmDismiss: (direction) {
+        return showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Are you sure?'),
+            content: Text('Do you want to delete item from the cart?'),
+            actions: [
+              FlatButton(
+                child: Text('No'),
+                onPressed: () {
+                  Navigator.of(ctx).pop(false);
+                },
+              ),
+              FlatButton(
+                child: Text('Yes'),
+                onPressed: () {
+                  Navigator.of(ctx).pop(true);
+                },
+              )
+            ],
+          ),
+        );
+      },
       direction: DismissDirection.endToStart,
       key: ValueKey(id),
       onDismissed: (direction) {
@@ -47,7 +70,7 @@ class CartItem extends StatelessWidget {
               ),
             ),
             title: Text(title),
-            subtitle: Text('Total ${(price * quantity)} zł'),
+            subtitle: Text('Total ${(price * quantity).toStringAsFixed(2)} zł'),
             trailing: Text(quantity.toString() + 'x'),
           ),
         ),
