@@ -51,36 +51,35 @@ class Products with ChangeNotifier {
     return _items.firstWhere((element) => element.id == id);
   }
 
-  Future<void> addProduct(Product product) {
+  Future<void> addProduct(Product product) async {
     const url = 'https://flutter-update-aa136.firebaseio.com/products.json';
-    return http
-        .post(
-      url,
-      body: json.encode({
-        'title': product.title,
-        'description': product.description,
-        'imageUrl': product.imageUrl,
-        'price': product.price,
-        'isFavorite': product.isFavorite,
-      }),
-    )
-        .then(
-      (value) {
-        final newProduct = Product(
-          description: product.description,
-          price: product.price,
-          imageUrl: product.imageUrl,
-          title: product.title,
-          id: json.decode(value.body)['name'],
-        );
-        print(json.decode(value.body)['name']);
-        _items.add(newProduct);
-        notifyListeners();
-      },
-    ).catchError((error) {
+
+    try {
+      final response = await http.post(
+        url,
+        body: json.encode({
+          'title': product.title,
+          'description': product.description,
+          'imageUrl': product.imageUrl,
+          'price': product.price,
+          'isFavorite': product.isFavorite,
+        }),
+      );
+
+      final newProduct = Product(
+        description: product.description,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        title: product.title,
+        id: json.decode(response.body)['name'],
+      );
+      print(json.decode(response.body)['name']);
+      _items.add(newProduct);
+      notifyListeners();
+    } catch (error) {
       print(error);
       throw error;
-    });
+    }
   }
 
   void updateProduct(String id, Product newProduct) {
@@ -94,5 +93,32 @@ class Products with ChangeNotifier {
   void deleteProduct(String id) {
     _items.removeWhere((element) => element.id == id);
     notifyListeners();
+  }
+
+  Future<void> fetchAndServeProducts() async {
+    const url = 'https://flutter-update-aa136.firebaseio.com/products.json';
+    try {
+      final response = await http.get(url);
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      final List<Product> loadedProducts = [];
+      data.forEach(
+        (key, value) {
+          final newProd = Product(
+            description: value['description'],
+            id: key,
+            imageUrl: value['imageUrl'],
+            price: value['price'],
+            title: value['title'],
+            isFavorite: value['isFavorite'],
+          );
+          loadedProducts.add(newProd);
+        },
+      );
+      _items = loadedProducts;
+      notifyListeners();
+    } catch (error) {
+      print(error);
+      throw (error);
+    }
   }
 }

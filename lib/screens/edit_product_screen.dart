@@ -28,7 +28,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
   };
 
   var _initialized = false;
-  var _editing = false;
 
   void _updateImageUrl() {
     if (!_imageUrlFocusNode.hasFocus) {
@@ -36,45 +35,46 @@ class _EditProductScreenState extends State<EditProductScreen> {
     }
   }
 
-  void _saveForm() {
+  Future<void> _saveForm() async {
     final isValid = _form.currentState.validate();
-    if (isValid) {
-      _form.currentState.save();
-      if (!_editing) {
-        Provider.of<Products>(context, listen: false)
-            .addProduct(_editedProduct)
-            .catchError((error) {
-          return showDialog<Null>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: Text('An error occured!'),
-              content: Text('Something went wrong'),
-              actions: [
-                FlatButton(
-                  child: Text('Okay'),
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                  },
-                )
-              ],
-            ),
-          );
-        }).then(
-          (value) {
-            setState(() {
-              _isLoading = false;
-            });
-            Navigator.of(context).pop();
-          },
+    if (!isValid) {
+      return;
+    }
+    _form.currentState.save();
+    setState(() {
+      _isLoading = true;
+    });
+    if (_editedProduct.id != null) {
+      Provider.of<Products>(context, listen: false)
+          .updateProduct(_editedProduct.id, _editedProduct);
+      setState(() {
+        _isLoading = false;
+      });
+      Navigator.of(context).pop();
+    } else {
+      try {
+        await Provider.of<Products>(context, listen: false)
+            .addProduct(_editedProduct);
+      } catch (error) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('An error occurred!'),
+            content: Text('Something went wrong.'),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('Okay'),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+              )
+            ],
+          ),
         );
-        setState(
-          () {
-            _isLoading = true;
-          },
-        );
-      } else {
-        Provider.of<Products>(context, listen: false)
-            .updateProduct(_initValues['id'], _editedProduct);
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
         Navigator.of(context).pop();
       }
     }
@@ -91,7 +91,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     if (!_initialized) {
       final productId = ModalRoute.of(context).settings.arguments;
       if (productId != null) {
-        _editing = true;
         _editedProduct = Provider.of<Products>(context).findById(productId);
         _initValues = {
           'title': _editedProduct.title,

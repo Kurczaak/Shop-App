@@ -7,6 +7,7 @@ import '../widgets/badge.dart';
 import '../providers/cart.dart';
 import './cart_screen.dart';
 import '../widgets/app_drawer.dart';
+import '../providers/products_provider.dart';
 
 enum FavsFilter {
   All,
@@ -20,6 +21,8 @@ class ProductsOverviewScreen extends StatefulWidget {
 
 class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   var _showFavs = false;
+  var _isLoading = false;
+
   void setFilter(FavsFilter filter) {
     setState(() {
       if (filter == FavsFilter.Favorite)
@@ -27,6 +30,24 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
       else
         _showFavs = false;
     });
+  }
+
+  @override
+  void initState() {
+    //Provider.of<Products>(context).fetchAndSerProducts();
+    setState(() {
+      _isLoading = true;
+    });
+
+    Future.delayed(Duration.zero).then((_) {
+      // Sort of a workaround
+      Provider.of<Products>(context, listen: false)
+          .fetchAndServeProducts()
+          .then((_) => setState(() {
+                _isLoading = false;
+              }));
+    });
+    super.initState();
   }
 
   @override
@@ -64,7 +85,9 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
         ],
       ),
       drawer: AppDrawer(),
-      body: ProductsGrid(_showFavs),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : ProductsGrid(_showFavs),
     );
   }
 }
