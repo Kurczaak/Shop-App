@@ -66,7 +66,7 @@ class CartItem extends StatelessWidget {
             leading: CircleAvatar(
               child: Padding(
                 padding: const EdgeInsets.all(3.0),
-                child: FittedBox(child: Text(price.toString() + 'zł')),
+                child: FittedBox(child: Text(price.toStringAsFixed(2) + 'zł')),
               ),
             ),
             title: Text(title),

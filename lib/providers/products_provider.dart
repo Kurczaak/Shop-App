@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import './product.dart';
+import '../models/http_exception.dart';
 
 class Products with ChangeNotifier {
   List<Product> _items = [
@@ -73,7 +74,6 @@ class Products with ChangeNotifier {
         title: product.title,
         id: json.decode(response.body)['name'],
       );
-      print(json.decode(response.body)['name']);
       _items.add(newProduct);
       notifyListeners();
     } catch (error) {
@@ -82,17 +82,48 @@ class Products with ChangeNotifier {
     }
   }
 
-  void updateProduct(String id, Product newProduct) {
+  Future<void> updateProduct(String id, Product newProduct) async {
+    final url = 'https://flutter-update-aa136.firebaseio.com/products/$id.json';
     final prodIndx = _items.indexWhere((element) => element.id == id);
+    await http.patch(
+      url,
+      body: json.encode({
+        'title': newProduct.title,
+        'description': newProduct.description,
+        'imageUrl': newProduct.imageUrl,
+        'price': newProduct.price,
+        'isFavorite': newProduct.isFavorite,
+      }),
+    );
+
     if (prodIndx >= 0) {
       _items[prodIndx] = newProduct;
       notifyListeners();
     }
   }
 
-  void deleteProduct(String id) {
+  Future<void> deleteProduct(String id) async {
+    final url = 'https://flutter-update-aa136.firebaseio.com/products/$id.json';
+    // index and product caching
+    final productToDeleteIndex =
+        _items.indexWhere((element) => element.id == id);
+    var productToDelete = _items[productToDeleteIndex];
+
+    // remove product locally
     _items.removeWhere((element) => element.id == id);
     notifyListeners();
+
+    // send a delete request
+    final response = await http.delete(url);
+    // error
+    if (response.statusCode >= 400) {
+      _items.insert(
+          productToDeleteIndex, productToDelete); // bring the item back
+      notifyListeners();
+      throw HttpException('Deleting failed:' + response.statusCode.toString());
+    }
+
+    productToDelete = null;
   }
 
   Future<void> fetchAndServeProducts() async {
@@ -100,6 +131,7 @@ class Products with ChangeNotifier {
     try {
       final response = await http.get(url);
       final data = json.decode(response.body) as Map<String, dynamic>;
+      if (data == null) return;
       final List<Product> loadedProducts = [];
       data.forEach(
         (key, value) {

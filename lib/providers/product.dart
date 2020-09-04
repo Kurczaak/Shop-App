@@ -1,4 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../models/http_exception.dart';
 
 class Product with ChangeNotifier {
   final String id;
@@ -8,9 +12,26 @@ class Product with ChangeNotifier {
   final String imageUrl;
   bool isFavorite;
 
-  void toggleFavorite() {
+  Future<void> toggleFavorite() async {
+    final url = 'https://flutter-update-aa136.firebaseio.com/products/$id';
     isFavorite = !isFavorite;
     notifyListeners();
+    final response = await http.patch(
+      url,
+      body: json.encode({
+        'title': title,
+        'description': description,
+        'imageUrl': imageUrl,
+        'price': price,
+        'isFavorite': isFavorite,
+      }),
+    );
+    if (response.statusCode >= 400) {
+      isFavorite = !isFavorite;
+      notifyListeners();
+      throw HttpException(
+          'Favoriting failed: ' + response.statusCode.toString());
+    }
   }
 
   Product({
